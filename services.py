@@ -1,6 +1,11 @@
 import sqlalchemy.orm as _orm
 import models as _models, schemas as _schemas, database as _database
 #from models import User
+<<<<<<< HEAD
+=======
+import fastapi as _fastapi
+
+>>>>>>> Codigo
 
 def create_database():
     return _database.Base.metadata.create_all(bind=_database.engine)
@@ -13,6 +18,12 @@ def get_db():
         db.close()
  
 
+<<<<<<< HEAD
+=======
+
+
+#operações com usuário
+>>>>>>> Codigo
 def get_user(db: _orm.Session, user_id: int):
     return db.query(_models.User).filter(_models.User.id == user_id).first()
 
@@ -27,7 +38,11 @@ def create_user(db: _orm.Session, user: _schemas.UserCreate):
     db.refresh(db_user)
     return db_user
 
+<<<<<<< HEAD
 
+=======
+#operações com grafos
+>>>>>>> Codigo
 def get_graph(db: _orm.Session, graph_id: int):
     return db.query(_models.Grafo).filter(_models.Grafo.id == graph_id).first()
 
@@ -46,6 +61,62 @@ def create_graph(db: _orm.Session, graph: _schemas.GraphCreate, user: _schemas.U
     db.refresh(db_graph)
     return db_graph
 
+<<<<<<< HEAD
+=======
+def registerGraph(df, db, nome_arquivo, user_id, publico):
+    db_graph = get_graph_by_name(db=db, graph_name=nome_arquivo, user_id=user_id)
+    
+    if db_graph:
+        raise _fastapi.HTTPException(
+            status_code= 406, detail=" Este Grafo possuí o mesmo nome que outro já cadastrado"
+        )
+    else:  
+        user = get_user(db=db, user_id=user_id)
+        nodes_list = []
+        edges_list = []
+        df = df.reset_index()
+
+        for index, row in df.iterrows():
+            if row[0] not in nodes_list:
+                nodes_list.append(row[0])
+            if row[1] not in nodes_list:
+                nodes_list.append(row[1])
+
+            arestas = (row[0], row[1], row[2])
+            if arestas not in edges_list:
+                edges_list.append(arestas)
+        
+
+        graph = {
+            "nome_grafo": nome_arquivo,
+            "publico": publico,
+            "user_id": user.id 
+        }
+
+        grafo = create_graph(db=db, graph=graph, user=user) 
+
+        for node in nodes_list:  
+                no = {
+                    "nome_no": node,
+                    "grafo_id": grafo.id
+                }
+                create_node (db=db, node=no, graph=grafo)
+                
+        for edge in edges_list:  
+            db_edge = get_edge(db=db, edge_target=edge[1], edge_source=edge[0], edge_peso=edge[2], graph_id=grafo.id)   
+            if (db_edge is None):  
+                aresta = {
+                    "target_id": edge[1],
+                    "source_id": edge[0],
+                    "peso": edge[2],
+                    "grafo_id": grafo.id
+                }
+                create_edge(db=db, edge=aresta, graph=grafo)
+        return True
+
+
+
+>>>>>>> Codigo
 
 def get_node_by_name(db: _orm.Session, node_name: str, graph_id: int):
     return db.query(_models.No).filter(_models.No.nome_no == node_name and _models.No.grafo_id == graph_id).first()
@@ -57,6 +128,19 @@ def create_node(db: _orm.Session, node: _schemas.NodeCreate, graph: _schemas.Gra
     db.refresh(db_node)
     return db_node
 
+<<<<<<< HEAD
+=======
+def get_node(db: _orm.Session, node_id: str):
+    return db.query(_models.No).filter(_models.No.id == node_id).first()
+
+
+def get_nodes(db: _orm.Session, id_grafo: int):
+    return db.query(_models.No).filter(_models.No.grafo_id  == id_grafo).all()
+
+
+
+#operações com arestas
+>>>>>>> Codigo
 
 def get_edge(db: _orm.Session, edge_target: int, edge_source: int, edge_peso: int, graph_id: int):
     return db.query(_models.Aresta).filter(_models.Aresta.target_id == edge_target 
@@ -69,6 +153,7 @@ def create_edge(db: _orm.Session, edge: _schemas.EdgeCreate, graph: _schemas.Gra
     db.add(db_edge)
     db.commit()
     db.refresh(db_edge)
+<<<<<<< HEAD
     return db_edge
 
 
@@ -90,3 +175,6 @@ def create_node(db: _orm.Session, node: _schemas.NodeCreate, graph: _schemas.Gra
     return db_node
 
 
+=======
+    return db_edge
+>>>>>>> Codigo

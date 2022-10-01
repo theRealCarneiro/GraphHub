@@ -17,21 +17,15 @@ import math
 app = _fastapi.FastAPI()
 _services.create_database()
 
-origins = [
-    "http://localhost:3000",
-]
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-async def receberArquivo(file_read):  
-    return df
 
 @app.get("/users/{user_username}/{user_password}")
 def read_user(
@@ -66,65 +60,29 @@ async def create_user(
     return _services.create_user(db=db, user=user)
 
 
-def cadastroGrafoCompleto(df, db, nome_arquivo, user_id):
-    db_graph = _services.get_graph_by_name(db=db, graph_name=nome_arquivo, user_id=user_id)
-    
-    if db_graph:
-        raise _fastapi.HTTPException(
-            status_code= 406, detail=" Este Grafo possuí o mesmo nome que outro já cadastrado"
-        )
-    else:  
-        user = _services.get_user(db=db, user_id=user_id)
-        
-
-        
-        nodes_list = []
-        edges_list = []
-        df = df.reset_index()
-
-        for index, row in df.iterrows():
-            if row[0] not in nodes_list:
-                nodes_list.append(row[0])
-            if row[1] not in nodes_list:
-                nodes_list.append(row[1])
-
-            arestas = (row[0], row[1], row[2])
-            if arestas not in edges_list:
-                edges_list.append(arestas)
-        
-
+@app.post("/cadastro/grafo_vazio")
+async def create_graph_empty(user_id: int = Form(...), publico: bool = Form(...), nome_grafo: str = Form(...), db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    #busca usuário no banco
+    user = _services.get_user(db, user_id)
+    #caso o usuário exista, cria o grafo e o adiciona no banco
+    if user:
         graph = {
-            "nome_grafo": nome_arquivo,
-            "numerosDeNo": len(nodes_list),
-            "numeroDeArestas": len(edges_list),
-            "user_id": user.id 
+            "nome_grafo": nome_grafo,
+            "publico": publico,
+            "user_id": user_id
         }
-
-        grafo = _services.create_graph(db=db, graph=graph, user=user) 
-
-        for node in nodes_list:  
-                no = {
-                    "nome_no": node,
-                    "grafo_id": grafo.id
-                }
-                _services.create_node (db=db, node=no, graph=grafo)
-                
-        for edge in edges_list:  
-            db_edge = _services.get_edge(db=db, edge_target=edge[1], edge_source=edge[0], edge_peso=edge[2], graph_id=grafo.id)   
-            if (db_edge is None):  
-                aresta = {
-                    "target_id": edge[1],
-                    "source_id": edge[0],
-                    "peso": edge[2],
-                    "grafo_id": grafo.id
-                }
-                _services.create_edge (db=db, edge=aresta, graph=grafo)
-        return True
-
-
-
+        _services.create_graph(db=db, graph=graph, user=user)
+        raise _fastapi.HTTPException(
+            status_code=200, detail="Grafo cadastro com sucesso"
+        )
+    #caso usuário não exista, sobe uma exceção
+    else:
+        raise _fastapi.HTTPException(
+            status_code=401, detail="Não existe usuário com este ID"
+        )
+        
 @app.post("/cadastro/grafo/")
-async def create_graph(file: UploadFile, user_id: int = Form(...), db: _orm.Session = _fastapi.Depends(_services.get_db)):
+async def create_graph(file: UploadFile, user_id: int = Form(...), publico: bool = Form(...), db: _orm.Session = _fastapi.Depends(_services.get_db)):
     file_read = await file.read()
     nome_arquivo = file.filename
     texto = file_read.decode("utf-8")
@@ -140,8 +98,7 @@ async def create_graph(file: UploadFile, user_id: int = Form(...), db: _orm.Sess
             status_code=406, detail="Ha linhas nulas em seu txt corrija para realizar o cadastro"
             )
     if (df.iloc[:, 2].dtypes <= np.integer):
-          status_code=200
-          if(cadastroGrafoCompleto(df, db, nome_arquivo, user_id)):
+          if(_services.registerGraph(df, db, nome_arquivo, user_id, publico)):
               raise _fastapi.HTTPException(
             status_code=200, detail="Grafo cadastrado com sucesso!"
             ) 
@@ -149,16 +106,3 @@ async def create_graph(file: UploadFile, user_id: int = Form(...), db: _orm.Sess
           raise _fastapi.HTTPException(
             status_code=406, detail=" Em sua coluna de pesos ha valores que nao são inteiros corrija para realizar o cadastro"
             ) 
-
-
-    
-
-
-# @app.get("/users/", response_model=List[_schemas.User])
-# def read_users(
-#         skip: int = 0,
-#         limit: int = 10,
-#         db: _orm.Session = _fastapi.Depends(_services.get_db),
-#     ):
-#     users = _services.get_users(db=db, skip=skip, limit=limit)
-#     return users
