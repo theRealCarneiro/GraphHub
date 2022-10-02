@@ -137,7 +137,8 @@ async def lista_grafo(user_id: int, db: _orm.Session = _fastapi.Depends(_service
             "nome": grafo.nome_grafo,
             "nodes": nodes,
             "edges": edges,
-
+            "edgesNumber": len(edges),
+            "nodesNumber": len(nodes)
         })
     return {"graphTimeLine": graphTimeLine}
 
@@ -157,7 +158,7 @@ async def excluir_grafo(id_grafo: int, db: _orm.Session = _fastapi.Depends(_serv
 
 @app.post("/edita/grafo/")
 async def edit_graph(request: Request, db: _orm.Session = _fastapi.Depends(_services.get_db)):
-    request = request.json()
+    request = await request.json()
     id_grafo: request["id_grafo"]
     nome_grafo: request["nome_grafo"]
     grafo = _services.get_graph(db, id_grafo)
