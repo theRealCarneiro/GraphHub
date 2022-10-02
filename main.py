@@ -159,8 +159,8 @@ async def excluir_grafo(id_grafo: int, db: _orm.Session = _fastapi.Depends(_serv
 @app.post("/edita/grafo/")
 async def edit_graph(request: Request, db: _orm.Session = _fastapi.Depends(_services.get_db)):
     request = await request.json()
-    id_grafo: request["id_grafo"]
-    nome_grafo: request["nome_grafo"]
+    id_grafo = request["id_grafo"]
+    nome_grafo = request["nome_grafo"]
     grafo = _services.get_graph(db, id_grafo)
     if grafo:
             if _services.edit_graph(db, grafo, nome_grafo):
