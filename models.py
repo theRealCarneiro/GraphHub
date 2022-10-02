@@ -10,26 +10,19 @@ class User(_database.Base):
     id = _sql.Column(_sql.Integer, primary_key=True, index=True)
     username = _sql.Column(_sql.String, default=True)
     hashed_password = _sql.Column(_sql.String)
-<<<<<<< HEAD
-    # is_active = _sql.Column(_sql.Boolean, default=True)
-=======
 
->>>>>>> Codigo
-   
+
  
 class Grafo(_database.Base):
     __tablename__ = "grafo"
     id = _sql.Column(_sql.Integer, primary_key =True, index=True)
     nome_grafo = _sql.Column(_sql.String, index=True)
     user_id = _sql.Column(_sql.Integer, _sql.ForeignKey("usuario.id"))
-<<<<<<< HEAD
-    NumerosDeNo = _sql.Column(_sql.Integer, index=True)
-    NumeroDeArestas =  _sql.Column(_sql.Integer, index=True)
-    #owner = _orm.relationship("User", back_populates="grafo")
 
-=======
+
+
     publico = _sql.Column(_sql.Boolean, default=True)
->>>>>>> Codigo
+
 
 class No(_database.Base):
     __tablename__ = "no"

@@ -1,11 +1,8 @@
 import sqlalchemy.orm as _orm
 import models as _models, schemas as _schemas, database as _database
 #from models import User
-<<<<<<< HEAD
-=======
 import fastapi as _fastapi
 
->>>>>>> Codigo
 
 def create_database():
     return _database.Base.metadata.create_all(bind=_database.engine)
@@ -18,12 +15,9 @@ def get_db():
         db.close()
  
 
-<<<<<<< HEAD
-=======
-
 
 #operações com usuário
->>>>>>> Codigo
+
 def get_user(db: _orm.Session, user_id: int):
     return db.query(_models.User).filter(_models.User.id == user_id).first()
 
@@ -38,13 +32,14 @@ def create_user(db: _orm.Session, user: _schemas.UserCreate):
     db.refresh(db_user)
     return db_user
 
-<<<<<<< HEAD
 
-=======
 #operações com grafos
->>>>>>> Codigo
 def get_graph(db: _orm.Session, graph_id: int):
     return db.query(_models.Grafo).filter(_models.Grafo.id == graph_id).first()
+
+def get_graphs(db: _orm.Session, user_id: int):
+    return db.query(_models.Grafo).filter(_models.Grafo.user_id == user_id).all()
+
 
 def get_graph_by_name(db: _orm.Session, graph_name: str, user_id: int):
     db_graph = db.query(_models.Grafo).filter(_models.Grafo.user_id == user_id)
@@ -55,14 +50,22 @@ def get_graph_by_name(db: _orm.Session, graph_name: str, user_id: int):
     return None
 
 def create_graph(db: _orm.Session, graph: _schemas.GraphCreate, user: _schemas.User):
-    db_graph = _models.Grafo(nome_grafo=graph["nome_grafo"], user_id=user.id, NumerosDeNo=graph["numerosDeNo"], NumeroDeArestas=graph["numeroDeArestas"])
+    print(graph)
+    db_graph = _models.Grafo(nome_grafo=graph["nome_grafo"], user_id=user.id)
     db.add(db_graph)
     db.commit()
     db.refresh(db_graph)
     return db_graph
 
-<<<<<<< HEAD
-=======
+def edit_graph(db: _orm.Session, graph: _schemas.GraphCreate, nome_novo):
+    graph.nome_grafo = nome_novo
+    db.commit()
+    db.refresh(graph)
+    return graph
+
+
+
+
 def registerGraph(df, db, nome_arquivo, user_id, publico):
     db_graph = get_graph_by_name(db=db, graph_name=nome_arquivo, user_id=user_id)
     
@@ -95,32 +98,35 @@ def registerGraph(df, db, nome_arquivo, user_id, publico):
 
         grafo = create_graph(db=db, graph=graph, user=user) 
 
-        for node in nodes_list:  
-                no = {
+        for node in nodes_list:
+            no = {
                     "nome_no": node,
                     "grafo_id": grafo.id
-                }
-                create_node (db=db, node=no, graph=grafo)
+            }
+            create_node(db=db, node=no, graph=grafo)
                 
-        for edge in edges_list:  
-            db_edge = get_edge(db=db, edge_target=edge[1], edge_source=edge[0], edge_peso=edge[2], graph_id=grafo.id)   
-            if (db_edge is None):  
+        for edge in edges_list:
+                target = get_node_by_name(db=db, node_name=edge[1], graph_id=grafo.id)
+                source = get_node_by_name(db=db, node_name=edge[0], graph_id=grafo.id)
                 aresta = {
-                    "target_id": edge[1],
-                    "source_id": edge[0],
+                    "target_id": target.id,
+                    "source_id": source.id,
                     "peso": edge[2],
                     "grafo_id": grafo.id
                 }
                 create_edge(db=db, edge=aresta, graph=grafo)
         return True
 
+def deletar_grafo(db: _orm.Session, grafo_id: int):
+    db_graph = get_graph(db, grafo_id)
+    db.delete(db_graph)
+    db.commit()
+#-------------------------------------------------
 
-
->>>>>>> Codigo
+#operações com nós
 
 def get_node_by_name(db: _orm.Session, node_name: str, graph_id: int):
     return db.query(_models.No).filter(_models.No.nome_no == node_name and _models.No.grafo_id == graph_id).first()
-
 def create_node(db: _orm.Session, node: _schemas.NodeCreate, graph: _schemas.Graph):
     db_node = _models.No(nome_no=node["nome_no"], grafo_id=graph.id)
     db.add(db_node)
@@ -128,53 +134,46 @@ def create_node(db: _orm.Session, node: _schemas.NodeCreate, graph: _schemas.Gra
     db.refresh(db_node)
     return db_node
 
-<<<<<<< HEAD
-=======
-def get_node(db: _orm.Session, node_id: str):
-    return db.query(_models.No).filter(_models.No.id == node_id).first()
-
 
 def get_nodes(db: _orm.Session, id_grafo: int):
     return db.query(_models.No).filter(_models.No.grafo_id  == id_grafo).all()
 
+def get_node(db: _orm.Session, node_id: str):
+    return db.query(_models.No).filter(_models.No.id == node_id).first()
+
+def deletar_nos(db: _orm.Session, grafo_id: int, grafo):
+    list_nodes = get_nodes(db, id_grafo=grafo_id)
+    for node in list_nodes:
+        delete_node(db=db, node_id=node.id, grafo=grafo)
+
+def delete_node(db: _orm.Session, node_id: int, grafo):
+    db_node = get_node(db=db, node_id=node_id)
+    db.delete(db_node)
+    db.commit()
+#-----------------------------------------------
+
 
 
 #operações com arestas
->>>>>>> Codigo
 
-def get_edge(db: _orm.Session, edge_target: int, edge_source: int, edge_peso: int, graph_id: int):
-    return db.query(_models.Aresta).filter(_models.Aresta.target_id == edge_target 
-                                       and _models.Aresta.source_id == edge_source
-                                       and _models.Aresta.peso == edge_peso
-                                       and _models.Aresta.grafo_id == graph_id).first()
+def get_edge(db: _orm.Session, edge_id: int):
+    return db.query(_models.Aresta).filter(_models.Aresta.id == edge_id ).first()
+def get_edges(db: _orm.Session, grafo_id: int):
+    return db.query(_models.Aresta).filter(_models.Aresta.grafo_id == grafo_id).all()
 
 def create_edge(db: _orm.Session, edge: _schemas.EdgeCreate, graph: _schemas.Graph):
     db_edge = _models.Aresta(peso=edge["peso"], source_id=edge["source_id"], target_id=edge["target_id"], grafo_id=graph.id)
     db.add(db_edge)
     db.commit()
     db.refresh(db_edge)
-<<<<<<< HEAD
     return db_edge
 
+def deletar_arestas(db: _orm.Session, grafo_id: int, grafo):
+    list_arestas = get_edges(db, grafo_id=grafo_id)
+    for aresta in list_arestas:
+        delete_edge(db, edge_id=aresta.id, grafo=grafo)
 
-def get_nodes(db: _orm.Session, id_grafo: int):
-    return db.query(_models.No).filter(_models.No.grafo_id  == id_grafo).all()
-
-#SPRINT3: Pegar nó pelo id 
-def get_node(db: _orm.Session, node_id: str):
-    return db.query(_models.No).filter(_models.No.id == node_id).first()
-
-def get_node_by_name(db: _orm.Session, node_name: str, graph_id: int):
-    return db.query(_models.No).filter(_models.No.nome_no == node_name and _models.No.grafo_id == graph_id).first()
-
-def create_node(db: _orm.Session, node: _schemas.NodeCreate, graph: _schemas.Graph):
-    db_node = _models.No(nome_no=node["nome_no"], grafo_id=graph.id)
-    db.add(db_node)
+def delete_edge(db: _orm.Session, edge_id: int, grafo):
+    db_edge = get_edge(db,edge_id)
+    db.delete(db_edge)
     db.commit()
-    db.refresh(db_node)
-    return db_node
-
-
-=======
-    return db_edge
->>>>>>> Codigo

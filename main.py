@@ -69,17 +69,17 @@ async def create_graph_empty(user_id: int = Form(...), publico: bool = Form(...)
         graph = {
             "nome_grafo": nome_grafo,
             "publico": publico,
-            "user_id": user_id
+            "user_id": user_id,
         }
         _services.create_graph(db=db, graph=graph, user=user)
-        raise _fastapi.HTTPException(
-            status_code=200, detail="Grafo cadastro com sucesso"
-        )
+        return "Grafo cadastrado com sucesso!"
     #caso usuário não exista, sobe uma exceção
     else:
         raise _fastapi.HTTPException(
             status_code=401, detail="Não existe usuário com este ID"
         )
+
+
         
 @app.post("/cadastro/grafo/")
 async def create_graph(file: UploadFile, user_id: int = Form(...), publico: bool = Form(...), db: _orm.Session = _fastapi.Depends(_services.get_db)):
@@ -99,10 +99,69 @@ async def create_graph(file: UploadFile, user_id: int = Form(...), publico: bool
             )
     if (df.iloc[:, 2].dtypes <= np.integer):
           if(_services.registerGraph(df, db, nome_arquivo, user_id, publico)):
-              raise _fastapi.HTTPException(
-            status_code=200, detail="Grafo cadastrado com sucesso!"
-            ) 
+                return "Grafo cadastrado com sucesso!"
     else:
           raise _fastapi.HTTPException(
             status_code=406, detail=" Em sua coluna de pesos ha valores que nao são inteiros corrija para realizar o cadastro"
-            ) 
+            )
+
+
+@app.get("/lista/grafos/{user_id}")
+async def lista_grafo(user_id: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    graphTimeLine = []
+
+    grafos = _services.get_graphs(db=db, user_id=user_id)
+    for grafo in grafos:
+        nodes = []
+        edges = []
+        list_nodes = _services.get_nodes(db=db, id_grafo=grafo.id)
+        list_edges = _services.get_edges(db=db, grafo_id=grafo.id)
+        for node in list_nodes:
+            nodes.append({
+                "id": node.id,
+                "label": node.nome_no,
+            })
+        for edge in list_edges:
+            edges.append({
+                "from": edge.source_id,
+                "to": edge.target_id,
+                "weight": str(edge.peso)
+            })
+        graphTimeLine.append({
+            "id": grafo.id,
+            "nome": grafo.nome_grafo,
+            "nodes": nodes,
+            "edges": edges,
+
+        })
+    return {"graphTimeLine": graphTimeLine}
+
+
+@app.get("/excluir/grafo/{id_grafo}")
+async def excluir_grafo(id_grafo: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    grafo = _services.get_graph(db, id_grafo)
+    if grafo:
+        _services.deletar_arestas(db, id_grafo, grafo=grafo)
+        _services.deletar_nos(db, id_grafo, grafo)
+        _services.deletar_grafo(db, id_grafo)
+        return "Grafo excluido com sucesso"
+
+    raise _fastapi.HTTPException(
+        status_code=404, detail="Grafo inexistente!"
+    )
+
+@app.post("/edita/grafo/")
+async def edit_graph(id_grafo: int = Form(...), nome_grafo: str = Form(...), db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    grafo = _services.get_graph(db, id_grafo)
+    if grafo:
+            if _services.edit_graph(db, grafo, nome_grafo):
+                return "Grafo editado com sucesso"
+            else:
+                raise _fastapi.HTTPException(
+                    status_code=400, detail="Não foi possível editar o grafo!"
+                )
+
+    else:
+        raise _fastapi.HTTPException(
+            status_code=404, detail="Grafo inexistente!"
+        )
