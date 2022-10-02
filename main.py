@@ -130,7 +130,7 @@ async def lista_grafo(user_id: int, db: _orm.Session = _fastapi.Depends(_service
             edges.append({
                 "from": edge.source_id,
                 "to": edge.target_id,
-                "weight": str(edge.peso)
+                "label": str(edge.peso)
             })
         graphTimeLine.append({
             "id": grafo.id,
