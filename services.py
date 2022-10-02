@@ -126,7 +126,10 @@ def deletar_grafo(db: _orm.Session, grafo_id: int):
 #operações com nós
 
 def get_node_by_name(db: _orm.Session, node_name: str, graph_id: int):
-    return db.query(_models.No).filter(_models.No.nome_no == node_name and _models.No.grafo_id == graph_id).first()
+        nodes = db.query(_models.No).filter((_models.No.grafo_id == graph_id)).all()
+        for node in nodes:
+            if node.nome_no == node_name:
+                return  node
 def create_node(db: _orm.Session, node: _schemas.NodeCreate, graph: _schemas.Graph):
     db_node = _models.No(nome_no=node["nome_no"], grafo_id=graph.id)
     db.add(db_node)

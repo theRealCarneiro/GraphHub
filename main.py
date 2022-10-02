@@ -7,7 +7,7 @@ from fastapi import  File, UploadFile, Form
 import io
 import pandas as pd
 import numpy as np
-import math
+from starlette.requests import Request
 
 
 ## uvicorn main:app --reload
@@ -61,8 +61,13 @@ async def create_user(
 
 
 @app.post("/cadastro/grafo_vazio")
-async def create_graph_empty(user_id: int = Form(...), publico: bool = Form(...), nome_grafo: str = Form(...), db: _orm.Session = _fastapi.Depends(_services.get_db)):
+async def create_graph_empty(request: Request, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    request = await request.json()
+    user_id = request["user_id"]
+    publico = request["publico"]
+    nome_grafo = request["nome_grafo"]
     #busca usuário no banco
+    # request
     user = _services.get_user(db, user_id)
     #caso o usuário exista, cria o grafo e o adiciona no banco
     if user:
@@ -84,7 +89,7 @@ async def create_graph_empty(user_id: int = Form(...), publico: bool = Form(...)
 @app.post("/cadastro/grafo/")
 async def create_graph(file: UploadFile, user_id: int = Form(...), publico: bool = Form(...), db: _orm.Session = _fastapi.Depends(_services.get_db)):
     file_read = await file.read()
-    nome_arquivo = file.filename
+    nome_arquivo = file.filename.split(".")
     texto = file_read.decode("utf-8")
     buffer = io.StringIO(texto)
     df = pd.read_csv(filepath_or_buffer = buffer, header=None)
@@ -98,7 +103,7 @@ async def create_graph(file: UploadFile, user_id: int = Form(...), publico: bool
             status_code=406, detail="Ha linhas nulas em seu txt corrija para realizar o cadastro"
             )
     if (df.iloc[:, 2].dtypes <= np.integer):
-          if(_services.registerGraph(df, db, nome_arquivo, user_id, publico)):
+          if(_services.registerGraph(df, db, nome_arquivo[0], user_id, publico)):
                 return "Grafo cadastrado com sucesso!"
     else:
           raise _fastapi.HTTPException(
@@ -151,7 +156,10 @@ async def excluir_grafo(id_grafo: int, db: _orm.Session = _fastapi.Depends(_serv
     )
 
 @app.post("/edita/grafo/")
-async def edit_graph(id_grafo: int = Form(...), nome_grafo: str = Form(...), db: _orm.Session = _fastapi.Depends(_services.get_db)):
+async def edit_graph(request: Request, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    request = request.json()
+    id_grafo: request["id_grafo"]
+    nome_grafo: request["nome_grafo"]
     grafo = _services.get_graph(db, id_grafo)
     if grafo:
             if _services.edit_graph(db, grafo, nome_grafo):
