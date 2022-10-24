@@ -124,6 +124,12 @@ def deletar_grafo(db: _orm.Session, grafo_id: int):
 #-------------------------------------------------
 
 #operações com nós
+def update_node(db: _orm.Session, node_id: int, nome_no: str):
+    db_node = get_node(db=db, node_id=node_id)
+    db_node.nome_no = nome_no
+    db.commit()
+    db.refresh(db_node)
+    return db_node
 
 def get_node_by_name(db: _orm.Session, node_name: str, graph_id: int):
         nodes = db.query(_models.No).filter((_models.No.grafo_id == graph_id)).all()
@@ -180,3 +186,22 @@ def delete_edge(db: _orm.Session, edge_id: int, grafo):
     db_edge = get_edge(db,edge_id)
     db.delete(db_edge)
     db.commit()
+
+def get_new_edge(db: _orm.Session, edge_target: int, edge_source: int, edge_peso: int, graph_id: int):
+    return db.query(_models.Aresta).filter(_models.Aresta.target_id == edge_target 
+                                       and _models.Aresta.source_id == edge_source
+                                       and _models.Aresta.peso == edge_peso
+                                       and _models.Aresta.grafo_id == graph_id).first()
+
+def update_edge(db: _orm.Session, edge_id: int, peso: str):
+    db_edge = get_edge(db=db, edge_id=edge_id)
+    db_edge.peso = peso
+    db.add(db_edge)
+    db.commit()
+    db.refresh(db_edge)
+    return db_edge
+
+
+def get_edges_by_node(db: _orm.Session, node_id):
+    return db.query(_models.Aresta).filter(_models.Aresta.target_id == node_id or _models.Aresta.source_id == node_id).all()
+
