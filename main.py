@@ -174,3 +174,159 @@ async def edit_graph(request: Request, db: _orm.Session = _fastapi.Depends(_serv
         raise _fastapi.HTTPException(
             status_code=404, detail="Grafo inexistente!"
         )
+# ----------------------------------------------------------------------------------------------------------
+
+
+# OPERAÇÕES COM NÓS ---------------------------------------------------------------------------------------------------------------------    
+@app.get("/criar/no/{nome_no}/{graph_id}")
+#async def create_node(node: _schemas.NodeCreate, graph_id: int = Form(...), db: _orm.Session = _fastapi.Depends(_services.get_db)):
+async def create_node(nome_no: str, graph_id: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+      
+    grafo = _services.get_graph(db=db, graph_id=graph_id)
+    if (grafo is None): #OU if(grafo is None) ????
+        raise _fastapi.HTTPException(
+            status_code= 404, detail="Grafo não encontrado"
+        )       
+    
+    db_node = _services.get_node_by_name(db=db, node_name=nome_no, graph_id=grafo.id)   
+    if (db_node is None):  
+        no = {
+            "nome_no": nome_no,
+            "grafo_id": grafo.id
+        }
+        _services.create_node (db=db, node=no, graph=grafo);
+        raise _fastapi.HTTPException(
+            status_code= 200, detail="Nó criado com sucesso!"
+        )
+            
+                      
+#SPRINT3: Deletar nó
+@app.get("/deletar/no/{node_id}")
+async def delete_node(node_id: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    
+    node = _services.get_node(db=db, node_id=node_id)
+    if (node is None):
+        raise _fastapi.HTTPException(
+            status_code= 404, detail="Nó não encontrado. Id passado não corresponde a nenhum nó salvo"
+        )
+    else:
+
+        grafo = _services.get_graph(db, node.grafo_id)
+        _services.delete_node(db=db, node_id=node_id, grafo=grafo)
+        list_edges_with_node = _services.get_edges_by_node(db, node_id=node_id)
+        for edge in list_edges_with_node:
+            _services.delete_edge(db, edge_id=edge.id, grafo=grafo)
+        
+        raise _fastapi.HTTPException(
+            status_code= 200, detail="Nó delatado com sucesso!"
+        )
+        
+#SPRINT3: Editar nó
+@app.get("/editar/no/{node_id}/{nome_no}")
+async def update_node(nome_no: str, node_id: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    
+    node = _services.get_node(db=db, node_id=node_id)
+    if (node is None):
+        raise _fastapi.HTTPException(
+            status_code= 404, detail="Nó não encontrado. Id passado não corresponde a nenhum nó salvo"
+        )
+    else:
+        _services.update_node (db=db, node_id=node_id, nome_no=nome_no)
+        raise _fastapi.HTTPException(
+            status_code= 200, detail="Nó editado com sucesso!"
+        )
+
+
+@app.get("/lista/nos/{id_grafo}")
+async def lista_grafo(id_grafo: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    list_nodes = _services.get_nodes(db=db, id_grafo=id_grafo)
+    nodes_list = []
+    for node in list_nodes:
+        nodes_list.append({
+            "id": node.id,
+            "label": node.nome_no
+        })
+    return nodes_list
+
+# -------------------------------------------------------------------------------------------------------
+
+
+# OPERAÇÕES COM ARESTAS -------------------------------------------------------------------------------------------------------------------------
+# Criar aresta
+@app.get("/criar/aresta/{no1_id}/{no2_id}/{peso}/{graph_id}")
+async def create_edge(no1_id: int,no2_id:int,peso:str, graph_id: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+      
+    grafo = _services.get_graph(db=db, graph_id=graph_id)
+    if (grafo is None):
+        raise _fastapi.HTTPException(
+            status_code= 404, detail="Grafo não encontrado"
+        )        
+
+    db_edges = _services.get_edges(db=db, grafo_id=grafo.id)
+    for edge in db_edges:
+        if edge.source_id == no2_id and edge.target_id == no1_id:
+            raise _fastapi.HTTPException(
+            status_code= 404, detail="Aresta já existe!"
+        )   
+    
+ 
+    aresta = {
+        "target_id": no1_id,
+        "source_id": no2_id,
+        "peso": peso,
+        "grafo_id": grafo.id
+        }
+    return _services.create_edge(db=db, edge=aresta, graph=grafo)
+    
+     
+                      
+#Deletar aresta
+@app.get("/deletar/aresta/{edge_id}")
+async def delete_edge(edge_id: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    
+    edge = _services.get_edge(db=db, edge_id=edge_id)
+    if (edge is None):
+        raise _fastapi.HTTPException(
+            status_code= 404, detail="Aresta não encontrada."
+        )
+    else:
+        grafo = _services.get_graph(db, edge.grafo_id)
+        _services.delete_edge(db=db, edge_id=edge_id, grafo=grafo)
+       
+     
+        
+# Editar aresta
+@app.get("/editar/aresta/{edge_id}/{peso}")
+async def update_edge(peso: str, edge_id: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    
+    edge = _services.get_edge(db=db, edge_id=edge_id)
+    if (edge is None):
+        raise _fastapi.HTTPException(
+            status_code= 404, detail="Aresta não encontrada."
+        )
+    else:
+        _services.update_edge (db=db, edge_id=edge_id, peso=peso)
+
+
+
+# Listar Arestas
+@app.get("/lista/aresta/{id_grafo}")
+async def lista_aresta(id_grafo: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    try:
+        edge_list = []
+        list_edges = _services.get_edges(db=db, grafo_id=id_grafo)
+        for edge in list_edges:
+            source = _services.get_node(db, edge.source_id)
+            target = _services.get_node(db, edge.target_id)
+            edge_list.append({
+                "id": edge.id,
+                "Source": source.nome_no,
+                "Target": target.nome_no,
+                "Source_id": source.id,
+                "Target_id":  target.id,
+                "peso": str(edge.peso)
+            })
+        return edge_list
+    except:
+        edge_list = []
+        return edge_list
