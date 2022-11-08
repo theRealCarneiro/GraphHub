@@ -208,32 +208,27 @@ def get_edges_by_node(db: _orm.Session, node_id):
 
 
 def search(db: _orm.Session, key):
-    repository = db.query(_models.User).filter().all()
+    list_user = db.query(_models.User).filter().all()
 
     repositoryFiltred = []
-    for x in repository:
-        flag = 1
-        for i in range(0,len(x.username)):
-            if i < (len(key)):
-                if (x.username[i] != key[i]):
-                    flag = 0
-                    break   
-        if flag == 1:
-
-            graphs = db.query(_models.Grafo).filter(_models.Grafo.user_id == x.id).all()
+    
+    for user in list_user:
+        count_public_repository = 0
+        if (user.username.lower().startswith(key.lower())):
+            graphs = db.query(_models.Grafo).filter(_models.Grafo.user_id == user.id).all()
             graphsFiltred = []
-            for k in graphs:
-                if k.publico == True:
-                    graphsFiltred.append(k)
+            for graph in graphs:
+                if graph.publico == True:
+                    count_public_repository+=1
                     
 
-            aux = {"username": x.username,
-                    "user_id": x.id,
-                    "numberOfRepository": len(graphsFiltred)}
+            aux = {"username": user.username,
+                    "user_id": user.id,
+                    "numberOfRepository": count_public_repository}
             repositoryFiltred.append(aux)
 
     repositoryFiltred.sort(key=lambda d: (d['numberOfRepository']*-1)) 
-    return {"repositoryFiltred": repositoryFiltred}
+    return {"repositoryFiltred": re positoryFiltred}
 
 
 def search_graph(db: _orm.Session, user_id):

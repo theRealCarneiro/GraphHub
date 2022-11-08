@@ -9,6 +9,8 @@ import pandas as pd
 import numpy as np
 from starlette.requests import Request
 from operator import itemgetter
+from fastapi.responses import FileResponse
+
 
 
 ## uvicorn main:app --reload
@@ -341,7 +343,7 @@ async def search(key, db: _orm.Session = _fastapi.Depends(_services.get_db)):
 
 
 @app.get("/pesquisa/listagem/{user_id}")
-async def Graphslisted(user_id, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+async def graphslisted(user_id, db: _orm.Session = _fastapi.Depends(_services.get_db)):
     graph_list = _services.search_graph(db,user_id)
     graphTimeLine = []
     for grafo in graph_list:
@@ -369,4 +371,34 @@ async def Graphslisted(user_id, db: _orm.Session = _fastapi.Depends(_services.ge
             "nodesNumber": len(nodes)
         })
     return {"graphTimeLine": graphTimeLine}
+
+
+@app.get("/download/{graph_id}")
+async def download_graph(graph_id: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    
+    graph =  _services.get_graph(db, graph_id)
+    if graph:
+        edges_list = _services.get_edges(db, graph_id)
+        arq = open("./" + graph.nome_grafo, "w")
+        i = 0
+        if arq:
+            for edge in edges_list:
+                node_source = _services.get_node(db, edge.source_id)
+                node_target = _services.get_node(db, edge.target_id)
+                i+=1
+                if i != len(edges_list):
+                    arq.write(node_source.nome_no + "," + node_target.nome_no + "," + str(edge.peso)+"\n")
+                else:
+                    arq.write(node_source.nome_no + "," + node_target.nome_no + "," + str(edge.peso))
+                
+            return FileResponse("./" + graph.nome_grafo)
+        else:
+              raise _fastapi.HTTPException(
+            status_code= 400, detail="Erro com o arquivo txt"
+        )
+    else:
+       raise _fastapi.HTTPException(
+            status_code= 404, detail="Grafo não encontrado."
+        )
+
 
