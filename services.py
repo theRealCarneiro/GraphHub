@@ -224,7 +224,7 @@ def search(db: _orm.Session, key):
 
             aux = {"username": user.username,
                     "user_id": user.id,
-                    "numberOfRepository": count_public_repository}
+                    "repositoryNumbers": count_public_repository}
             filteredUsers.append(aux)
 
     filteredUsers.sort(key=lambda d: (d['numberOfRepository']*-1)) 
