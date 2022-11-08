@@ -210,7 +210,7 @@ def get_edges_by_node(db: _orm.Session, node_id):
 def search(db: _orm.Session, key):
     list_user = db.query(_models.User).filter().all()
 
-    repositoryFiltred = []
+    filteredUsers = []
     
     for user in list_user:
         count_public_repository = 0
@@ -225,10 +225,10 @@ def search(db: _orm.Session, key):
             aux = {"username": user.username,
                     "user_id": user.id,
                     "numberOfRepository": count_public_repository}
-            repositoryFiltred.append(aux)
+            filteredUsers.append(aux)
 
-    repositoryFiltred.sort(key=lambda d: (d['numberOfRepository']*-1)) 
-    return {"repositoryFiltred": re positoryFiltred}
+    filteredUsers.sort(key=lambda d: (d['numberOfRepository']*-1)) 
+    return {"repositoryFiltred": filteredUsers}
 
 
 def search_graph(db: _orm.Session, user_id):

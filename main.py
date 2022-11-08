@@ -338,8 +338,8 @@ async def lista_aresta(id_grafo: int, db: _orm.Session = _fastapi.Depends(_servi
 
 @app.get("/pesquisa/{key}")
 async def search(key, db: _orm.Session = _fastapi.Depends(_services.get_db)):
-    repositoryFiltred = _services.search(db, key)
-    return repositoryFiltred
+    filteredUsers = _services.search(db, key)
+    return filteredUsers
 
 
 @app.get("/pesquisa/listagem/{user_id}")
