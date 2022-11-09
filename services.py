@@ -235,11 +235,11 @@ def search(db: _orm.Session, key):
 
             aux = {"username": user.username,
                     "user_id": user.id,
-                    "repositoryNumbers": count_public_repository}
+                    "repositoriesNumber": count_public_repository}
             filteredUsers.append(aux)
 
-    filteredUsers.sort(key=lambda d: (d['numberOfRepository']*-1)) 
-    return {"repositoryFiltred": filteredUsers}
+    filteredUsers.sort(key=lambda d: (d['repositoriesNumber']*-1)) 
+    return {"filteredUsers": filteredUsers}
 
 
 def search_graph(db: _orm.Session, user_id):
