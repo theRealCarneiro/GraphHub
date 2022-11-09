@@ -141,7 +141,8 @@ async def lista_grafo(user_id: int, db: _orm.Session = _fastapi.Depends(_service
             "nodes": nodes,
             "edges": edges,
             "edgesNumber": len(edges),
-            "nodesNumber": len(nodes)
+            "nodesNumber": len(nodes),
+            "isPublic": grafo.publico
         })
     return {"graphTimeLine": graphTimeLine}
 
@@ -171,6 +172,22 @@ async def edit_graph(request: Request, db: _orm.Session = _fastapi.Depends(_serv
             else:
                 raise _fastapi.HTTPException(
                     status_code=400, detail="Não foi possível editar o grafo!"
+                )
+
+    else:
+        raise _fastapi.HTTPException(
+            status_code=404, detail="Grafo inexistente!"
+        )
+
+@app.get("/edita/grafo/visibility/{id_grafo}")
+async def edit_graph_visibility(id_grafo: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    graph = _services.get_graph(db, id_grafo)
+    if graph:
+            if _services.edit_graph_visib(db, graph, graph.publico):
+                return "Visibilidade do grafo editada com sucesso"
+            else:
+                raise _fastapi.HTTPException(
+                    status_code=400, detail="Não foi possível editar a visibilidade do grafo!"
                 )
 
     else:
@@ -342,36 +359,43 @@ async def search(key, db: _orm.Session = _fastapi.Depends(_services.get_db)):
     return filteredUsers
 
 
-@app.get("/pesquisa/listagem/{user_id}")
-async def graphslisted(user_id, db: _orm.Session = _fastapi.Depends(_services.get_db)):
-    graph_list = _services.search_graph(db,user_id)
-    graphTimeLine = []
-    for grafo in graph_list:
-        nodes = []
-        edges = []
-        list_nodes = _services.get_nodes(db=db, id_grafo=grafo.id)
-        list_edges = _services.get_edges(db=db, grafo_id=grafo.id)
-        for node in list_nodes:
-            nodes.append({
-                "id": node.id,
-                "label": node.nome_no,
+@app.get("/pesquisa/listagem/{username}")
+async def graphslisted(username: str, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    
+    user = _services.get_user_by_username(db, username)
+    if user:
+        graph_list = _services.search_graph(db,user.id)
+        graphTimeLine = []
+        for graph in graph_list:
+            nodes = []
+            edges = []
+            list_nodes = _services.get_nodes(db=db, id_grafo=graph.id)
+            list_edges = _services.get_edges(db=db, grafo_id=graph.id)
+            for node in list_nodes:
+                nodes.append({
+                    "id": node.id,
+                    "label": node.nome_no,
+                })
+            for edge in list_edges:
+                edges.append({
+                    "from": edge.source_id,
+                    "to": edge.target_id,
+                    "label": str(edge.peso)
+                })
+            graphTimeLine.append({
+                "id": graph.id,
+                "nome": graph.nome_grafo,
+                "nodes": nodes,
+                "edges": edges,
+                "edgesNumber": len(edges),
+                "nodesNumber": len(nodes)
             })
-        for edge in list_edges:
-            edges.append({
-                "from": edge.source_id,
-                "to": edge.target_id,
-                "label": str(edge.peso)
-            })
-        graphTimeLine.append({
-            "id": grafo.id,
-            "nome": grafo.nome_grafo,
-            "nodes": nodes,
-            "edges": edges,
-            "edgesNumber": len(edges),
-            "nodesNumber": len(nodes)
-        })
-    return {"graphTimeLine": graphTimeLine}
-
+        return {"graphTimeLine": graphTimeLine}
+    else:
+        raise _fastapi.HTTPException(
+            status_code= 400, detail="Usuário não encontrado!"
+        )
+        
 
 @app.get("/download/{graph_id}")
 async def download_graph(graph_id: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):

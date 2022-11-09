@@ -63,6 +63,17 @@ def edit_graph(db: _orm.Session, graph: _schemas.GraphCreate, nome_novo):
     db.refresh(graph)
     return graph
 
+def edit_graph_visib(db: _orm.Session, graph: _schemas.GraphCreate, isPublic):
+    
+    if isPublic == True:
+        graph.publico = False
+    else:
+        graph.publico = True
+    
+    db.commit()
+    db.refresh(graph)
+    return graph
+
 
 
 
