@@ -18,9 +18,6 @@ class Grafo(_database.Base):
     id = _sql.Column(_sql.Integer, primary_key =True, index=True)
     nome_grafo = _sql.Column(_sql.String, index=True)
     user_id = _sql.Column(_sql.Integer, _sql.ForeignKey("usuario.id"))
-
-
-
     publico = _sql.Column(_sql.Boolean, default=True)
 
 

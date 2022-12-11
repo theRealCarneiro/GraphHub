@@ -78,6 +78,7 @@ async def create_graph_empty(request: Request, db: _orm.Session = _fastapi.Depen
             "nome_grafo": nome_grafo,
             "publico": publico,
             "user_id": user_id,
+            "isforked": False
         }
         _services.create_graph(db=db, graph=graph, user=user)
         return "Grafo cadastrado com sucesso!"
@@ -426,3 +427,9 @@ async def download_graph(graph_id: int, db: _orm.Session = _fastapi.Depends(_ser
         )
 
 
+@app.get("/fork/{id_grafo}/{id_usuario}")
+async def fork(id_grafo: int, id_usuario: int, db: _orm.Session = _fastapi.Depends(_services.get_db)):
+    if _services.forkGraph(db, id_grafo, id_usuario):
+        return "Grafo forkado com sucesso!"
+    else:
+        return "Erro ao forkar grafo!"

@@ -26,6 +26,7 @@ class _GraphBase(_pydantic.BaseModel):
 class GraphCreate(_GraphBase):
     user_id: int
     publico: int
+    isforked: int
 
 
 class Graph(_GraphBase):

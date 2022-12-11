@@ -50,7 +50,6 @@ def get_graph_by_name(db: _orm.Session, graph_name: str, user_id: int):
     return None
 
 def create_graph(db: _orm.Session, graph: _schemas.GraphCreate, user: _schemas.User):
-    print(graph)
     db_graph = _models.Grafo(nome_grafo=graph["nome_grafo"], user_id=user.id, publico=graph["publico"])
     db.add(db_graph)
     db.commit()
@@ -75,8 +74,54 @@ def edit_graph_visib(db: _orm.Session, graph: _schemas.GraphCreate, isPublic):
     return graph
 
 
+def forkGraph(db, graph_id, user_id):
+    user =  get_user(db, user_id)
+    graph_aux = get_graph(db, graph_id)
+
+    gc = {
+        "nome_grafo": graph_aux.nome_grafo,
+        "publico": True,
+    }
 
 
+    graph = create_graph(db, gc, user)
+    
+    nodes = get_nodes(db, graph_id)
+    edges =  get_edges(db, graph_id)
+    
+    
+    
+    if graph and nodes and edges and user:
+        
+        for node in nodes:
+            node_aux = {
+                "nome_no": node.nome_no,
+            }
+            create_node(db, node_aux, graph)
+        
+        
+        for edge in edges:
+            target_aux = get_node(db, edge.target_id)
+            source_aux = get_node(db, edge.source_id)
+
+            target = get_node_by_name(db, target_aux.nome_no, graph.id)
+            source = get_node_by_name(db, source_aux.nome_no, graph.id)
+            
+            edge_aux = {
+                "target_id": target.id,
+                "source_id": source.id,
+                "peso": edge.peso
+            }
+            create_edge(db, edge_aux, graph)
+
+       
+        return True
+    
+    else:
+        return False
+
+
+    
 def registerGraph(df, db, nome_arquivo, user_id, publico):
     db_graph = get_graph_by_name(db=db, graph_name=nome_arquivo, user_id=user_id)
     
@@ -104,7 +149,7 @@ def registerGraph(df, db, nome_arquivo, user_id, publico):
         graph = {
             "nome_grafo": nome_arquivo,
             "publico": publico,
-            "user_id": user.id 
+            "isforked": False
         }
 
         grafo = create_graph(db=db, graph=graph, user=user) 
